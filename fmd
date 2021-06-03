@@ -1,0 +1,42 @@
+#!/bin/sh
+# deps: curl, jq, wget, ffmpeg
+
+query="$*"
+query="$(echo "$query" | tr ' ' '+')"
+
+song="$(curl --silent \
+        "https://www.jiosaavn.com/api.php?p=1&q=$query&_format=json&_marker=0&api_version=4&ctx=wap6dot0&n=10&__call=search.getResults" \
+        | jq '.results[0]')"
+
+song_title="$(echo "$song" | jq -r '."title"')"
+song_artist="$(echo "$song" | jq -r '."more_info"."artistMap"."primary_artists"[0].name')"
+song_album="$(echo "$song" | jq -r '."more_info"."album"')"
+song_label="$(echo "$song" | jq -r '."more_info"."label"')"
+song_year="$(echo "$song" | jq -r '."year"')"
+song_cprtxt="$(echo "$song" | jq -r '."more_info"."copyright_text"')"
+
+
+song_id="$(echo "$song" |  jq -r '.id')"
+song_url="$(curl --silent \
+        "https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=$song_id" \
+        | jq -r ".\"$song_id\".\"media_preview_url\"")"
+
+# parse song_url
+song_url="https://aac.${song_url#http*preview.}"
+song_url="${song_url%_96_p.mp4}_320.mp4"
+
+filename="$(echo "$song_title-$song_artist($song_year)" | tr ' ' '_')"
+
+wget  -q --show-progress "$song_url" -O "$filename.tmp" > /dev/null
+
+printf "Extracting Audio..."
+
+[ -f "$filename.opus" ] && rm "$filename.opus"
+
+ffmpeg -i "$filename.tmp" -metadata artist="$song_artist" \
+        -b:a 320k \
+        -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
+        -metadata title="$song_title" -metadata year="$song_year" \
+        -metadata label="$song_label" -metadata copyright="$song_cprtxt" "$filename.opus" >/dev/null 2>&1\
+&& rm "$filename.tmp"
+echo 'done'
