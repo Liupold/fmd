@@ -6,5 +6,5 @@
 (No other function)
 
 ```
-sh fmd <song title> <song artist>
+sh fmd <song title> song by <song artist>
 ```
