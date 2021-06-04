@@ -2,7 +2,7 @@
 
 ## No nonsense Music Downloader.
 
-### Download Opus (360k) using song title and artist.
+### Download Opus / mp3 (360k) using song title and artist.
 (No other function)
 
 ```
