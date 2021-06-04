@@ -21,5 +21,5 @@ jobs:
       run: echo "1" | sh ./fmd "" && [ -n "$(find -name '*.opus')" ]
 
     - name: sample download (mp3)
-      run: echo "1" | sh ./fmd "" && [ -n "$(find -name '*.mp3')" ]
+      run: echo "1" | sh ./fmd "" mp3 && [ -n "$(find -name '*.mp3')" ]
 
