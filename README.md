@@ -11,5 +11,5 @@ sh fmd "<song title>" "<song artist>"
 
 Example:
 ```
-fmd "Now You Know" "Tom Rosenthal"
+sh fmd "Now You Know" "Tom Rosenthal"
 ```
