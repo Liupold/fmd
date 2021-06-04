@@ -1,20 +1,32 @@
 #!/bin/sh
-# deps: curl, jq, wget, ffmpeg, grep
+# deps: curl, jq, wget, ffmpeg, seq, paste
 set -e
 
 #OPTIONS
+TMP_PATH="/tmp/"
 OUTPUT_BITRATE="320k" # Max (=default = 360k)
 OUTPUT_FORMAT="opus" # (default = opus);
 # OUTPUT_FORMAT="mp3" # uncomment for mp3
 
-query_title="$1"
-query_artist="$2"
+query="$*"
+query="$(echo "$query " | tr ' ' '+')"
 
-query="$(echo "$query_title $query_artist" | tr ' ' '+')"
+songs_list="$(curl --silent \
+        "https://www.jiosaavn.com/api.php?p=1&q=$query&_format=json&_marker=0&api_version=4&ctx=wap6dot0&n=10&__call=search.getResults" )"
 
-song="$(curl --silent \
-        "https://www.jiosaavn.com/api.php?p=1&q=$query&_format=json&_marker=0&api_version=4&ctx=wap6dot0&n=10&__call=search.getResults" \
-        | jq '.results[0]')"
+# list_id="$(echo "$songs_list" | jq -r '.results[].more_info.artistMap.primary_artists[0].name')"
+
+echo "$songs_list" | jq -r '.results[].more_info.artistMap.primary_artists[0].name' > "$TMP_PATH/fmd.1"
+echo "$songs_list" | jq -r '.results[].title' > "$TMP_PATH/fmd.2"
+echo "$songs_list" | jq -r '.results[].year' > "$TMP_PATH/fmd.4"
+list_legth="$(wc -l "$TMP_PATH/fmd.1")"
+seq 1 "${list_legth%% *}" > "$TMP_PATH/fmd.3"
+
+paste "$TMP_PATH/fmd.3" "$TMP_PATH/fmd.1" "$TMP_PATH/fmd.2" "$TMP_PATH/fmd.4"
+
+echo ""
+echo "Select:" ; read -r sel_idx
+song="$(echo "$songs_list" | jq ".results[$((sel_idx - 1))]")"
 
 song_title="$(echo "$song" | jq -r '."title"')"
 song_artist="$(echo "$song" | jq -r '."more_info"."artistMap"."primary_artists"[0].name')"
@@ -24,33 +36,29 @@ song_year="$(echo "$song" | jq -r '."year"')"
 song_cprtxt="$(echo "$song" | jq -r '."more_info"."copyright_text"')"
 
 # match song
-echo "$song_title" | grep -qi "$query_title" \
-        && echo "$song_artist" | grep -qi "$query_artist" \
-        && {
-        song_id="$(echo "$song" |  jq -r '.id')"
-        song_url="$(curl --silent \
-                "https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=$song_id" \
-                | jq -r ".\"$song_id\".\"media_preview_url\"")"
+song_id="$(echo "$song" |  jq -r '.id')"
+song_url="$(curl --silent \
+        "https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=$song_id" \
+        | jq -r ".\"$song_id\".\"media_preview_url\"")"
 
-        # parse song_url
-        song_url="https://aac.${song_url#http*preview.}"
-        song_url="${song_url%_96_p.mp4}_320.mp4"
+# parse song_url
+song_url="https://aac.${song_url#http*preview.}"
+song_url="${song_url%_96_p.mp4}_320.mp4"
 
-        filename="$(echo "$song_title-$song_artist($song_year)" | tr ' ' '_')"
+filename="$(echo "$song_title-$song_artist($song_year)" | tr ' ' '_')"
 
-        wget --show-progress -q "$song_url" -O "$filename.tmp" > /dev/null
+wget --show-progress -q "$song_url" -O "$filename.tmp" > /dev/null
 
-        printf "Extracting Audio..."
+printf "Extracting Audio..."
 
-        [ -f "$filename.opus" ] && rm "$filename.opus"
+[ -f "$filename.opus" ] && rm "$filename.opus"
 
-        ffmpeg -i "$filename.tmp" -metadata artist="$song_artist" \
-                -b:a "$OUTPUT_BITRATE" \
-                -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
-                -metadata title="$song_title" -metadata year="$song_year" \
-                -metadata label="$song_label" -metadata copyright="$song_cprtxt" "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1\
-        && rm "$filename.tmp"
-        echo 'done'
-        exit 0 # Everyting went well.
-} || echo "song not found" && exit 1
+ffmpeg -i "$filename.tmp" -metadata artist="$song_artist" \
+        -b:a "$OUTPUT_BITRATE" \
+        -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
+        -metadata title="$song_title" -metadata year="$song_year" \
+        -metadata label="$song_label" -metadata copyright="$song_cprtxt" "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1\
+&& rm "$filename.tmp"
+echo 'done'
+exit 0 # Everyting went well.
 
