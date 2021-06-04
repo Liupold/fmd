@@ -13,11 +13,11 @@ sh fmd "<song title> <song artist>"
 
 mp3 (default):
 ```
-sh fmd "Now You Know Tom Rosenthal" mp3
+sh fmd "Now You Know Tom Rosenthal"
 ```
 
 opus :
 ```
-sh fmd "Now You Know Tom Rosenthal"
+sh fmd "Now You Know Tom Rosenthal" opus
 ```
 
