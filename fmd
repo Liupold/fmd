@@ -46,3 +46,5 @@ echo "$song_title" | grep -qi "$query_title" \
         && rm "$filename.tmp"
         echo 'done'
 } || echo "song not found" && exit 1
+
+exit 0 # Everyting went well.
