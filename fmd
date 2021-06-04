@@ -5,7 +5,8 @@ set -e
 #OPTIONS
 TMP_PATH="/tmp/"
 OUTPUT_BITRATE="320k" # Max (=default = 360k)
-OUTPUT_FORMAT="${2:=opus}" # (default = opus);
+OUTPUT_FORMAT="$2"
+OUTPUT_FORMAT="${OUTPUT_FORMAT:=opus}" # (default = opus);
 USER_AGENT_HEADER="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
 # OUTPUT_FORMAT="mp3" # uncomment for mp3
 

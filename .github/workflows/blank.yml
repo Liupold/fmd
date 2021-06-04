@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron:  '0 1 1,14,28 * *'
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: sample download (default)
+      run: echo "1" | fmd ""
+      run: ls *.opus
+
+    - name: sample download (mp3)
+      run: echo "1" | fmd "" 'mp3'
+      run: ls *.mp3
+
