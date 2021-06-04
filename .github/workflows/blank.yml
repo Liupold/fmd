@@ -15,8 +15,8 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: sample download (default)
-      run: echo "1" | fmd "" && ls *.opus
+      run: echo "1" | sh ./fmd "" && ls *.opus
 
     - name: sample download (mp3)
-      run: echo "1" | fmd "" 'mp3' &&  ls *.mp3
+      run: echo "1" | sh ./fmd "" 'mp3' &&  ls *.mp3
 
