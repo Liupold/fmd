@@ -2,20 +2,22 @@
 
 ## No nonsense Music Downloader.
 
-### Download Opus / mp3 (360k) using song title and artist.
+### Download mp3 / opus (360k) using song title and artist.
 
+* supports metadata and thumbnail
 ```
 sh fmd "<song title> <song artist>"
 ```
 
 ### Example:
 
-opus (default):
+mp3 (default):
+```
+sh fmd "Now You Know Tom Rosenthal" mp3
+```
+
+opus :
 ```
 sh fmd "Now You Know Tom Rosenthal"
 ```
 
-mp3:
-```
-sh fmd "Now You Know Tom Rosenthal" mp3
-```
