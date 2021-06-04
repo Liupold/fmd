@@ -56,6 +56,7 @@ printf "Extracting Audio..."
 
 [ -f "$filename.opus" ] && rm "$filename.opus"
 
+exit 0
 ffmpeg -i "$filename.tmp" -metadata artist="$song_artist" \
         -b:a "$OUTPUT_BITRATE" \
         -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
