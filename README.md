@@ -6,5 +6,10 @@
 (No other function)
 
 ```
-sh fmd <song title> song by <song artist>
+sh fmd "<song title>" "<song artist>"
+```
+
+Example:
+```
+fmd "Now You Know" "Tom Rosenthal"
 ```
