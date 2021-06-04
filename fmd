@@ -1,6 +1,12 @@
 #!/bin/sh
 # deps: curl, jq, wget, ffmpeg, grep
 set -e
+
+#OPTIONS
+OUTPUT_BITRATE="320k" # Max (=default = 360k)
+OUTPUT_FORMAT="opus" # (default = opus);
+# OUTPUT_FORMAT="mp3" # uncomment for mp3
+
 query_title="$1"
 query_artist="$2"
 
@@ -39,12 +45,12 @@ echo "$song_title" | grep -qi "$query_title" \
         [ -f "$filename.opus" ] && rm "$filename.opus"
 
         ffmpeg -i "$filename.tmp" -metadata artist="$song_artist" \
-                -b:a 320k \
+                -b:a "$OUTPUT_BITRATE" \
                 -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
                 -metadata title="$song_title" -metadata year="$song_year" \
-                -metadata label="$song_label" -metadata copyright="$song_cprtxt" "$filename.opus" >/dev/null 2>&1\
+                -metadata label="$song_label" -metadata copyright="$song_cprtxt" "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1\
         && rm "$filename.tmp"
         echo 'done'
+        exit 0 # Everyting went well.
 } || echo "song not found" && exit 1
 
-exit 0 # Everyting went well.
