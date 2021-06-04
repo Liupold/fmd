@@ -8,6 +8,15 @@
 ```
 sh fmd "<song title> <song artist>"
 ```
+### Requirements
+* curl
+* jq
+* wget
+* ffmpeg
+* seq
+* paste
+* wc
+
 
 ### Example:
 
