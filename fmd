@@ -6,7 +6,7 @@ set -e
 TMP_PATH="$HOME/.config/fmd"
 OUTPUT_BITRATE="320k" # Max (=default = 320k)
 OUTPUT_FORMAT="$2"
-OUTPUT_FORMAT="mp3" # (default = mp3)
+OUTPUT_FORMAT="${OUTPUT_FORMAT:=mp3}" # (default = mp3)
 # OUTPUT_FORMAT="${OUTPUT_FORMAT:=opus}" #uncomment to make opus default
 USER_AGENT_HEADER="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
 
