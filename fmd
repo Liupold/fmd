@@ -6,9 +6,9 @@ set -e
 TMP_PATH="$HOME/.config/fmd"
 OUTPUT_BITRATE="320k" # Max (=default = 320k)
 OUTPUT_FORMAT="$2"
-OUTPUT_FORMAT="${OUTPUT_FORMAT:=opus}" # (default = opus);
+OUTPUT_FORMAT="mp3" # (default = mp3)
+# OUTPUT_FORMAT="${OUTPUT_FORMAT:=opus}" #uncomment to make opus default
 USER_AGENT_HEADER="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
-# OUTPUT_FORMAT="mp3" # uncomment for mp3
 
 query="$1"
 query="$(echo "$query " | tr ' ' '+')"
@@ -30,6 +30,8 @@ paste "$TMP_PATH/fmd.3" "$TMP_PATH/fmd.1" "$TMP_PATH/fmd.2" "$TMP_PATH/fmd.4"
 echo ""
 echo "Select:" ; read -r sel_idx
 song="$(echo "$songs_list" | jq ".results[$((sel_idx - 1))]")"
+song_image="$(echo "$song" | jq -r '."image"')"
+song_image="${song_image%150x150.jpg}500x500.jpg"
 
 song_title="Unknown"; song_title="$(echo "$song" | jq -r '."title"')"
 song_artist="Unknown"; song_artist="$(echo "$song" | jq -r '."more_info"."artistMap"."primary_artists"[0].name')"
@@ -50,18 +52,37 @@ song_url="${song_url%_96_p.mp4}_320.mp4"
 
 filename="$(echo "$song_title-$song_artist($song_year)" | tr ' ' '_')"
 
-wget --show-progress -q "$song_url" -O "$filename.tmp" > /dev/null
+wget --show-progress -q "$song_url" -O "$filename.mp4"
+[ "$OUTPUT_FORMAT" = "mp3" ] && wget --show-progress -q "$song_image" -O "$filename.tmub.jpg"
 
 printf "Extracting Audio..."
 
-[ -f "$filename.opus" ] && rm "$filename.opus"
+[ -f "$filename.$OUTPUT_FORMAT" ] && "Overwrite $filename.$OUTPUT_FORMAT?(y/n)" \
+        && read -r resp && { [ "$resp" = 'y' ] && rm "$filename.opus"; }
 
-ffmpeg -i "$filename.tmp" -metadata artist="$song_artist" \
-        -b:a "$OUTPUT_BITRATE" \
-        -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
-        -metadata title="$song_title" -metadata year="$song_year" \
-        -metadata label="$song_label" -metadata copyright="$song_cprtxt" "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1\
-&& rm "$filename.tmp"
+[ -n "$resp" ] && [ "$resp" != 'y' ] && exit 1
+
+if [ "$OUTPUT_FORMAT" = "mp3" ]; then
+        ffmpeg -i "$filename.mp4" -i "$filename.tmub.jpg" -map 0:0 -map 1:0 \
+                -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover (front)" \
+                -b:a "$OUTPUT_BITRATE" \
+                -metadata artist="$song_artist" \
+                -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
+                -metadata title="$song_title" -metadata year="$song_year" \
+                -metadata label="$song_label" -metadata copyright="$song_cprtxt" \
+                "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1 \
+        && { rm "$filename.mp4"; rm "$filename.tmub.jpg";}
+else
+        ffmpeg -i "$filename.mp4" \
+                -b:a "$OUTPUT_BITRATE" \
+                -metadata artist="$song_artist" \
+                -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
+                -metadata title="$song_title" -metadata year="$song_year" \
+                -metadata label="$song_label" -metadata copyright="$song_cprtxt" \
+                "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1 \
+        && rm "$filename.mp4"
+fi
+
 echo 'done'
 exit 0 # Everyting went well.
 
