@@ -3,8 +3,8 @@
 set -e
 
 #OPTIONS
-TMP_PATH="/tmp/"
-OUTPUT_BITRATE="320k" # Max (=default = 360k)
+TMP_PATH="$HOME/.config/fmd"
+OUTPUT_BITRATE="320k" # Max (=default = 320k)
 OUTPUT_FORMAT="$2"
 OUTPUT_FORMAT="${OUTPUT_FORMAT:=opus}" # (default = opus);
 USER_AGENT_HEADER="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
@@ -12,6 +12,7 @@ USER_AGENT_HEADER="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWe
 
 query="$1"
 query="$(echo "$query " | tr ' ' '+')"
+mkdir -p "$TMP_PATH"
 
 songs_list="$(curl --silent -H "$USER_AGENT_HEADER"\
         "https://www.jiosaavn.com/api.php?p=1&q=$query&_format=json&_marker=0&api_version=4&ctx=wap6dot0&n=10&__call=search.getResults" )"
@@ -30,12 +31,12 @@ echo ""
 echo "Select:" ; read -r sel_idx
 song="$(echo "$songs_list" | jq ".results[$((sel_idx - 1))]")"
 
-song_title="$(echo "$song" | jq -r '."title"')"
-song_artist="$(echo "$song" | jq -r '."more_info"."artistMap"."primary_artists"[0].name')"
-song_album="$(echo "$song" | jq -r '."more_info"."album"')"
-song_label="$(echo "$song" | jq -r '."more_info"."label"')"
-song_year="$(echo "$song" | jq -r '."year"')"
-song_cprtxt="$(echo "$song" | jq -r '."more_info"."copyright_text"')"
+song_title="Unknown"; song_title="$(echo "$song" | jq -r '."title"')"
+song_artist="Unknown"; song_artist="$(echo "$song" | jq -r '."more_info"."artistMap"."primary_artists"[0].name')"
+song_album="Unknown"; song_album="$(echo "$song" | jq -r '."more_info"."album"')"
+song_label="Unknown"; song_label="$(echo "$song" | jq -r '."more_info"."label"')"
+song_year="Unknown"; song_year="$(echo "$song" | jq -r '."year"')"
+song_cprtxt="Unknown"; song_cprtxt="$(echo "$song" | jq -r '."more_info"."copyright_text"')"
 
 # match song
 song_id="$(echo "$song" |  jq -r '.id')"
