@@ -5,13 +5,14 @@ set -e
 #OPTIONS
 TMP_PATH="/tmp/"
 OUTPUT_BITRATE="320k" # Max (=default = 360k)
-OUTPUT_FORMAT="opus" # (default = opus);
+OUTPUT_FORMAT="${2:=opus}" # (default = opus);
+USER_AGENT_HEADER="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
 # OUTPUT_FORMAT="mp3" # uncomment for mp3
 
-query="$*"
+query="$1"
 query="$(echo "$query " | tr ' ' '+')"
 
-songs_list="$(curl --silent \
+songs_list="$(curl --silent -H "$USER_AGENT_HEADER"\
         "https://www.jiosaavn.com/api.php?p=1&q=$query&_format=json&_marker=0&api_version=4&ctx=wap6dot0&n=10&__call=search.getResults" )"
 
 # list_id="$(echo "$songs_list" | jq -r '.results[].more_info.artistMap.primary_artists[0].name')"
@@ -37,7 +38,7 @@ song_cprtxt="$(echo "$song" | jq -r '."more_info"."copyright_text"')"
 
 # match song
 song_id="$(echo "$song" |  jq -r '.id')"
-song_url="$(curl --silent \
+song_url="$(curl --silent -H "$USER_AGENT_HEADER"\
         "https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=$song_id" \
         | jq -r ".\"$song_id\".\"media_preview_url\"")"
 
