@@ -5,8 +5,9 @@
 ### Download mp3 / opus (360k) using song title and artist.
 
 * supports metadata and thumbnail
+
 ```
-sh fmd "<song title> <song artist>"
+sh fmd "<query>"
 ```
 ### Requirements
 * curl
@@ -18,15 +19,13 @@ sh fmd "<song title> <song artist>"
 * wc
 
 
-### Example:
-
-mp3 (default):
+### Install
 ```
-sh fmd "Now You Know Tom Rosenthal"
+sudo make install
 ```
 
-opus :
+### Uninstall
 ```
-sh fmd "Now You Know Tom Rosenthal" opus
+sudo make uninstall
 ```
 
