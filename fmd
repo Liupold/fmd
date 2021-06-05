@@ -75,7 +75,7 @@ for indx in $sel_idx; do
                         -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
                         -metadata title="$song_title" -metadata year="$song_year" \
                         -metadata label="$song_label" -metadata copyright="$song_cprtxt" \
-                        "$filename.$OUTPUT_FORMAT" >/dev/null \
+                        "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1 \
                 && { rm "$filename.mp4"; rm "$filename.tmub.jpg";}
         else
                 ffmpeg -i "$filename.mp4" \
