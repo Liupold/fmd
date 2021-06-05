@@ -18,8 +18,8 @@ jobs:
       run: sh -c "sudo apt install ffmpeg findutils"
 
     - name: sample download (default)
-      run: echo "1" | sh ./fmd "" && [ -n "$(find -name '*.mp3')" ]
+      run: echo "1:10" | sh ./fmd "new songs" && [ "$(find -name '*.mp3' | wc -l)" -eq 10 ]
 
     - name: sample download (opus)
-      run: echo "1" | sh ./fmd "" opus && [ -n "$(find -name '*.opus')" ]
+      run: echo "1 2 3 4" | sh ./fmd "new songs" opus && [ -n "$(find -name '*.opus' | wc -l)" -eq 4 ]
 

@@ -9,13 +9,14 @@ OUTPUT_FORMAT="$2"
 OUTPUT_FORMAT="${OUTPUT_FORMAT:=mp3}" # (default = mp3)
 # OUTPUT_FORMAT="${OUTPUT_FORMAT:=opus}" #uncomment to make opus default
 USER_AGENT_HEADER="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
+MAX_NUM="50"
 
 query="$1"
 query="$(echo "$query " | tr ' ' '+')"
 mkdir -p "$TMP_PATH"
 
 songs_list="$(curl --silent -H "$USER_AGENT_HEADER"\
-        "https://www.jiosaavn.com/api.php?p=1&q=$query&_format=json&_marker=0&api_version=4&ctx=wap6dot0&n=10&__call=search.getResults" )"
+        "https://www.jiosaavn.com/api.php?p=1&q=${query}&_format=json&_marker=0&api_version=4&ctx=wap6dot0&n=${MAX_NUM}&__call=search.getResults" )"
 
 # list_id="$(echo "$songs_list" | jq -r '.results[].more_info.artistMap.primary_artists[0].name')"
 
@@ -29,60 +30,66 @@ paste "$TMP_PATH/fmd.3" "$TMP_PATH/fmd.1" "$TMP_PATH/fmd.2" "$TMP_PATH/fmd.4"
 
 echo ""
 echo "Select:" ; read -r sel_idx
-song="$(echo "$songs_list" | jq ".results[$((sel_idx - 1))]")"
-song_image="$(echo "$song" | jq -r '."image"')"
-song_image="${song_image%150x150.jpg}500x500.jpg"
 
-song_title="Unknown"; song_title="$(echo "$song" | jq -r '."title"')"
-song_artist="Unknown"; song_artist="$(echo "$song" | jq -r '."more_info"."artistMap"."primary_artists"[0].name')"
-song_album="Unknown"; song_album="$(echo "$song" | jq -r '."more_info"."album"')"
-song_label="Unknown"; song_label="$(echo "$song" | jq -r '."more_info"."label"')"
-song_year="Unknown"; song_year="$(echo "$song" | jq -r '."year"')"
-song_cprtxt="Unknown"; song_cprtxt="$(echo "$song" | jq -r '."more_info"."copyright_text"')"
+for indx in $sel_idx; do
+        [ "$indx" != "${indx#*:}" ] && indx_u="${indx#*:}" && indx_l="${indx%:*}" && indx="$(seq "$indx_l" "$indx_u")";
+        for i in $indx; do
+        song="$(echo "$songs_list" | jq ".results[$((i - 1))]")"
+        song_image="$(echo "$song" | jq -r '."image"')"
+        song_image="${song_image%150x150.jpg}500x500.jpg"
 
-# match song
-song_id="$(echo "$song" |  jq -r '.id')"
-song_url="$(curl --silent -H "$USER_AGENT_HEADER"\
-        "https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=$song_id" \
-        | jq -r ".\"$song_id\".\"media_preview_url\"")"
+        song_title="Unknown"; song_title="$(echo "$song" | jq -r '."title"')"
+        song_artist="Unknown"; song_artist="$(echo "$song" | jq -r '."more_info"."artistMap"."primary_artists"[0].name')"
+        song_album="Unknown"; song_album="$(echo "$song" | jq -r '."more_info"."album"')"
+        song_label="Unknown"; song_label="$(echo "$song" | jq -r '."more_info"."label"')"
+        song_year="Unknown"; song_year="$(echo "$song" | jq -r '."year"')"
+        song_cprtxt="Unknown"; song_cprtxt="$(echo "$song" | jq -r '."more_info"."copyright_text"')"
 
-# parse song_url
-song_url="https://aac.${song_url#http*preview.}"
-song_url="${song_url%_96_p.mp4}_320.mp4"
+        # match song
+        song_id="$(echo "$song" |  jq -r '.id')"
+        song_url="$(curl --silent -H "$USER_AGENT_HEADER"\
+                "https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=$song_id" \
+                | jq -r ".\"$song_id\".\"media_preview_url\"")"
 
-filename="$(echo "$song_title-$song_artist($song_year)" | tr ' ' '_')"
+        # parse song_url
+        song_url="https://aac.${song_url#http*preview.}"
+        song_url="${song_url%_96_p.mp4}_320.mp4"
 
-wget --show-progress -q "$song_url" -O "$filename.mp4"
-[ "$OUTPUT_FORMAT" = "mp3" ] && wget --show-progress -q "$song_image" -O "$filename.tmub.jpg"
+        filename="$(echo "$song_title-$song_artist($song_year)" | tr ' ' '_')"
 
-printf "Extracting Audio..."
+        wget --show-progress -q "$song_url" -O "$filename.mp4"
+        [ "$OUTPUT_FORMAT" = "mp3" ] && wget --show-progress -q "$song_image" -O "$filename.tmub.jpg"
 
-[ -f "$filename.$OUTPUT_FORMAT" ] && "Overwrite $filename.$OUTPUT_FORMAT?(y/n)" \
-        && read -r resp && { [ "$resp" = 'y' ] && rm "$filename.opus"; }
+        printf "Extracting Audio..."
 
-[ -n "$resp" ] && [ "$resp" != 'y' ] && exit 1
+        [ -f "$filename.$OUTPUT_FORMAT" ] && "Overwrite $filename.$OUTPUT_FORMAT?(y/n)" \
+                && read -r resp && { [ "$resp" = 'y' ] && rm "$filename.opus"; }
 
-if [ "$OUTPUT_FORMAT" = "mp3" ]; then
-        ffmpeg -i "$filename.mp4" -i "$filename.tmub.jpg" -map 0:0 -map 1:0 \
-                -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover (front)" \
-                -b:a "$OUTPUT_BITRATE" \
-                -metadata artist="$song_artist" \
-                -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
-                -metadata title="$song_title" -metadata year="$song_year" \
-                -metadata label="$song_label" -metadata copyright="$song_cprtxt" \
-                "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1 \
-        && { rm "$filename.mp4"; rm "$filename.tmub.jpg";}
-else
-        ffmpeg -i "$filename.mp4" \
-                -b:a "$OUTPUT_BITRATE" \
-                -metadata artist="$song_artist" \
-                -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
-                -metadata title="$song_title" -metadata year="$song_year" \
-                -metadata label="$song_label" -metadata copyright="$song_cprtxt" \
-                "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1 \
-        && rm "$filename.mp4"
-fi
+        [ -n "$resp" ] && [ "$resp" != 'y' ] && exit 1
 
-echo 'done'
+        if [ "$OUTPUT_FORMAT" = "mp3" ]; then
+                ffmpeg -i "$filename.mp4" -i "$filename.tmub.jpg"  -map 0:0 -map 1:0 \
+                        -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover (front)" \
+                        -b:a "$OUTPUT_BITRATE"\
+                        -metadata artist="$song_artist" \
+                        -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
+                        -metadata title="$song_title" -metadata year="$song_year" \
+                        -metadata label="$song_label" -metadata copyright="$song_cprtxt" \
+                        "$filename.$OUTPUT_FORMAT" >/dev/null \
+                && { rm "$filename.mp4"; rm "$filename.tmub.jpg";}
+        else
+                ffmpeg -i "$filename.mp4" \
+                        -b:a "$OUTPUT_BITRATE" \
+                        -metadata artist="$song_artist" \
+                        -metadata album="$song_album" -metadata downloaded-using="free-music-downloader[FMD] by Liupold." \
+                        -metadata title="$song_title" -metadata year="$song_year" \
+                        -metadata label="$song_label" -metadata copyright="$song_cprtxt" \
+                        "$filename.$OUTPUT_FORMAT" >/dev/null 2>&1 \
+                && rm "$filename.mp4"
+        fi
+
+        echo 'done'
+        done
+done
 exit 0 # Everyting went well.
 
